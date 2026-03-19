@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 from collections import deque
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from aiokafka import AIOKafkaProducer
+from kafka import KafkaProducer
 
 from app.config import Settings
 from app.models import KafkaEarthquakeEnvelope
@@ -51,13 +52,7 @@ class RecentEventCache:
 class KafkaEventProducer:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._producer = AIOKafkaProducer(
-            bootstrap_servers=settings.kafka_bootstrap_servers,
-            client_id=settings.kafka_client_id,
-            acks=settings.kafka_acks,
-            request_timeout_ms=settings.kafka_request_timeout_ms,
-            enable_idempotence=settings.kafka_enable_idempotence,
-        )
+        self._producer: KafkaProducer | None = None
         self._started = False
 
     @property
@@ -67,14 +62,45 @@ class KafkaEventProducer:
     async def start(self) -> None:
         if self._started:
             return
-        await self._producer.start()
+        self._producer = await asyncio.to_thread(self._build_producer)
         self._started = True
 
     async def stop(self) -> None:
-        if not self._started:
+        if not self._started or self._producer is None:
             return
-        await self._producer.stop()
+        producer = self._producer
+        await asyncio.to_thread(producer.flush)
+        await asyncio.to_thread(producer.close)
+        self._producer = None
         self._started = False
+
+    def _build_producer(self) -> KafkaProducer:
+        bootstrap_servers = [
+            server.strip()
+            for server in self._settings.kafka_bootstrap_servers.split(",")
+            if server.strip()
+        ]
+        return KafkaProducer(
+            bootstrap_servers=bootstrap_servers,
+            client_id=self._settings.kafka_client_id,
+            acks=self._settings.kafka_acks,
+            request_timeout_ms=self._settings.kafka_request_timeout_ms,
+            enable_idempotence=self._settings.kafka_enable_idempotence,
+        )
+
+    def _send_and_wait(self, topic: str, event_id: str, payload: bytes) -> None:
+        producer = self._require_producer()
+        future = producer.send(
+            topic,
+            key=event_id.encode("utf-8"),
+            value=payload,
+        )
+        future.get(timeout=self._settings.kafka_request_timeout_ms / 1000)
+
+    def _require_producer(self) -> KafkaProducer:
+        if self._producer is None:
+            raise RuntimeError("Kafka producer has not been started")
+        return self._producer
 
     async def publish_envelopes(
         self,
@@ -89,10 +115,11 @@ class KafkaEventProducer:
                 counts.duplicate_count += 1
                 continue
 
-            await self._producer.send_and_wait(
+            await asyncio.to_thread(
+                self._send_and_wait,
                 topic,
-                key=envelope.event_id.encode("utf-8"),
-                value=serialize_envelope(envelope),
+                envelope.event_id,
+                serialize_envelope(envelope),
             )
             counts.published_count += 1
         return counts

@@ -39,8 +39,10 @@ class Settings(BaseSettings):
     spark_starting_offsets: str = "latest"
     spark_shuffle_partitions: int = 4
     spark_kafka_package: str = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1"
+    spark_delta_package: str = "io.delta:delta-spark_2.12:3.3.2"
 
     hdfs_base_path: str = "/data/earthquakes"
+    hdfs_default_fs: str = "hdfs://localhost:9000"
     local_storage_path: str = "./data/earthquakes"
     use_local_fs_for_storage: bool = False
 
@@ -79,6 +81,10 @@ class Settings(BaseSettings):
     @property
     def checkpoint_base_path(self) -> str:
         return f"{self.effective_storage_base_path}/checkpoints"
+
+    @property
+    def latest_event_output_path(self) -> str:
+        return f"{self.effective_storage_base_path}/latest_event"
 
 
 @lru_cache(maxsize=1)
