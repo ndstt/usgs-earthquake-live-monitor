@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     elasticsearch_password: str | None = None
     elasticsearch_events_index_prefix: str = "earthquake-events"
     elasticsearch_daily_summary_index: str = "earthquake-daily-summary-v1"
+    elasticsearch_region_hourly_stats_index: str = "earthquake-region-hourly-v1"
     elasticsearch_request_timeout_seconds: float = 10.0
     elasticsearch_bulk_batch_size: int = 500
 
@@ -85,6 +86,10 @@ class Settings(BaseSettings):
     @property
     def latest_event_output_path(self) -> str:
         return f"{self.effective_storage_base_path}/latest_event"
+
+    @property
+    def region_hourly_stats_output_path(self) -> str:
+        return f"{self.effective_storage_base_path}/region_hourly_stats"
 
 
 @lru_cache(maxsize=1)
