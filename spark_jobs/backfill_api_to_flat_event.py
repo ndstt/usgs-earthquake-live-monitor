@@ -23,6 +23,7 @@ class BackfillFlatEventSettings:
     window_days: int
     output_path: str
     initial_write_mode: str
+    hdfs_default_fs: str
     spark_master_url: str
     spark_app_name: str
     spark_shuffle_partitions: int
@@ -46,6 +47,7 @@ class BackfillFlatEventSettings:
             window_days=args.window_days or settings.backfill_window_days,
             output_path=args.output_path or f"{base_path}/flat_event",
             initial_write_mode=args.write_mode,
+            hdfs_default_fs=settings.hdfs_default_fs,
             spark_master_url=settings.spark_master_url,
             spark_app_name="usgs-earthquake-backfill-flat-event",
             spark_shuffle_partitions=settings.spark_shuffle_partitions,
@@ -97,6 +99,7 @@ def create_spark_session(settings: BackfillFlatEventSettings) -> SparkSession:
         .config("spark.jars.packages", settings.spark_delta_package)
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+        .config("spark.hadoop.fs.defaultFS", settings.hdfs_default_fs)
         .config("spark.sql.shuffle.partitions", settings.spark_shuffle_partitions)
         .config("spark.driver.memory", settings.spark_driver_memory)
         .config("spark.executor.memory", settings.spark_executor_memory)

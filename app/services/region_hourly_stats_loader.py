@@ -33,6 +33,9 @@ def region_hourly_stats_index_body() -> dict[str, object]:
                 "strong_count": {"type": "long"},
                 "severe_count": {"type": "long"},
                 "extreme_count": {"type": "long"},
+                "avg_longitude": {"type": "double"},
+                "avg_latitude": {"type": "double"},
+                "location": {"type": "geo_point"},
                 "year": {"type": "integer"},
                 "month": {"type": "integer"},
                 "day": {"type": "integer"},
@@ -56,6 +59,12 @@ def normalize_region_hourly_stats_row(row: dict[str, Any]) -> dict[str, Any]:
     document_id = normalized.get("document_id")
     if not isinstance(document_id, str) or not document_id:
         raise ValueError("region_hourly_stats row is missing a valid document_id")
+
+    latitude = normalized.get("avg_latitude")
+    longitude = normalized.get("avg_longitude")
+    if latitude is not None and longitude is not None:
+        normalized["location"] = {"lat": latitude, "lon": longitude}
+
     return normalized
 
 

@@ -17,6 +17,7 @@ class RegionHourlyStatsBuildSettings:
     source_path: str
     output_path: str
     write_mode: str
+    hdfs_default_fs: str
     spark_master_url: str
     spark_app_name: str
     spark_shuffle_partitions: int
@@ -33,6 +34,7 @@ class RegionHourlyStatsBuildSettings:
             source_path=args.source_path or settings.latest_event_output_path,
             output_path=args.output_path or settings.region_hourly_stats_output_path,
             write_mode=args.write_mode,
+            hdfs_default_fs=settings.hdfs_default_fs,
             spark_master_url=settings.spark_master_url,
             spark_app_name="usgs-earthquake-latest-event-to-region-hourly-stats",
             spark_shuffle_partitions=settings.spark_shuffle_partitions,
@@ -77,6 +79,7 @@ def create_spark_session(settings: RegionHourlyStatsBuildSettings) -> SparkSessi
         .config("spark.jars.packages", settings.spark_delta_package)
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+        .config("spark.hadoop.fs.defaultFS", settings.hdfs_default_fs)
         .config("spark.sql.shuffle.partitions", settings.spark_shuffle_partitions)
         .config("spark.driver.memory", settings.spark_driver_memory)
         .config("spark.executor.memory", settings.spark_executor_memory)

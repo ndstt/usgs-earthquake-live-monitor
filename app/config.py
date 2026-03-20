@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     elasticsearch_username: str | None = None
     elasticsearch_password: str | None = None
     elasticsearch_events_index_prefix: str = "earthquake-events"
+    elasticsearch_latest_event_index: str = "earthquake-latest-event-v1"
     elasticsearch_daily_summary_index: str = "earthquake-daily-summary-v1"
     elasticsearch_region_hourly_stats_index: str = "earthquake-region-hourly-v1"
     elasticsearch_request_timeout_seconds: float = 10.0
@@ -57,6 +58,10 @@ class Settings(BaseSettings):
 
     poll_interval_seconds: int = 60
     enable_realtime_poller: bool = False
+    enable_latest_event_loader: bool = True
+    latest_event_loader_interval_seconds: int = 60
+    enable_region_hourly_pipeline: bool = True
+    region_hourly_pipeline_interval_seconds: int = 3600
     backfill_window_days: int = 30
     dedupe_ttl_seconds: int = 3600
     dedupe_max_ids: int = 20000

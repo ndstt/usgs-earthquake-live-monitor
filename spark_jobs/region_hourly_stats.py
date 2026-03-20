@@ -130,6 +130,8 @@ def build_region_hourly_stats_df(latest_event_df: DataFrame) -> DataFrame:
             F.sum(F.when(F.col("severity") == "extreme", F.lit(1)).otherwise(F.lit(0)))
             .cast("long")
             .alias("extreme_count"),
+            F.avg(F.col("longitude").cast(T.DecimalType(12, 6))).cast("double").alias("avg_longitude"),
+            F.avg(F.col("latitude").cast(T.DecimalType(12, 6))).cast("double").alias("avg_latitude"),
         )
         .withColumn("year", F.year("bucket_start_utc"))
         .withColumn("month", F.month("bucket_start_utc"))
@@ -167,6 +169,8 @@ def build_region_hourly_stats_df(latest_event_df: DataFrame) -> DataFrame:
         "strong_count",
         "severe_count",
         "extreme_count",
+        "avg_longitude",
+        "avg_latitude",
         "year",
         "month",
         "day",
